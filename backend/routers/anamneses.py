@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from datetime import datetime
-from database import get_db
+from database import get_db, get_brazil_time
 from models.anamnese import Anamnese, Resposta
 from models.assinatura import Assinatura
 from models.anexo import Anexo
@@ -128,11 +128,10 @@ def finalizar_anamnese(
         raise HTTPException(status_code=404, detail="Anamnese não encontrada")
     if anamnese.status == "finalizada":
         raise HTTPException(status_code=400, detail="Anamnese já finalizada")
-
     # Update observations
     anamnese.observacoes = data.observacoes
     anamnese.status = "finalizada"
-    anamnese.finalizada_at = datetime.utcnow()
+    anamnese.finalizada_at = get_brazil_time()
 
     # Save final signature
     sig_path = save_base64_image(data.assinatura_final_base64, "assinaturas", "sig_final_")

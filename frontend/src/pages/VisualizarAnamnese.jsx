@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getAnamnese, finalizarAnamnese, uploadAnexo, deletarAnexo, downloadPdf, UPLOAD_URL } from '../services/api';
 import SignatureCanvas from '../components/SignatureCanvas';
-import { FiArrowLeft, FiEye, FiDownload, FiTrash2, FiUpload, FiCheckCircle, FiImage, FiEdit3, FiX } from 'react-icons/fi';
+import { FiArrowLeft, FiEye, FiDownload, FiTrash2, FiUpload, FiCheckCircle, FiImage, FiEdit3, FiX, FiCamera } from 'react-icons/fi';
 
 export default function VisualizarAnamnese() {
   const { id } = useParams();
@@ -45,12 +45,38 @@ export default function VisualizarAnamnese() {
         const formData = new FormData();
         formData.append('arquivo', file);
         formData.append('tipo', tipo);
-        formData.append('descricao', tipo === 'bancada' ? 'Foto da bancada' : 'Antes/Depois');
+        formData.append('descricao', '');
         await uploadAnexo(id, formData);
         await loadAnamnese();
       } catch (err) {
         console.error(err);
         alert('Erro ao enviar foto');
+      } finally {
+        setUploading(false);
+      }
+    };
+    input.click();
+  };
+
+  const handleCaptureFoto = async (tipo) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.setAttribute('capture', 'environment');
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      setUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append('arquivo', file);
+        formData.append('tipo', tipo);
+        formData.append('descricao', '');
+        await uploadAnexo(id, formData);
+        await loadAnamnese();
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao capturar foto');
       } finally {
         setUploading(false);
       }
@@ -288,41 +314,40 @@ export default function VisualizarAnamnese() {
             />
           </div>
 
-          {/* Photo uploads */}
+          {/* ─── FOTO DA BANCADA ─── */}
           <div className="bg-white rounded-3xl p-5 shadow-card">
-            <h3 className="font-heading font-semibold text-dark mb-4 flex items-center gap-2">
+            <h3 className="font-heading font-semibold text-dark mb-2 flex items-center gap-2">
               <FiImage className="text-accent" size={18} />
-              Fotos do Procedimento
+              Foto da Bancada
             </h3>
+            <p className="text-dark/40 text-xs mb-4">Registre a bancada preparada para o procedimento</p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div className="flex gap-3 mb-4">
               <button
                 onClick={() => handleUploadFoto('bancada')}
                 disabled={uploading}
-                className="p-6 rounded-2xl border-2 border-dashed border-secondary/50 hover:border-accent/50 text-center transition-all hover:bg-accent/5"
+                className="flex-1 p-4 rounded-2xl border-2 border-dashed border-secondary/50 hover:border-accent/50 text-center transition-all hover:bg-accent/5"
               >
-                <FiUpload className="mx-auto text-accent/50 mb-2" size={24} />
-                <p className="text-sm font-medium text-dark/60">Foto da Bancada</p>
-                <p className="text-xs text-dark/30 mt-1">Clique para enviar</p>
+                <FiUpload className="mx-auto text-accent/50 mb-1.5" size={20} />
+                <p className="text-xs font-medium text-dark/60">Enviar Foto</p>
               </button>
 
               <button
-                onClick={() => handleUploadFoto('antes_depois')}
+                onClick={() => handleCaptureFoto('bancada')}
                 disabled={uploading}
-                className="p-6 rounded-2xl border-2 border-dashed border-secondary/50 hover:border-accent/50 text-center transition-all hover:bg-accent/5"
+                className="flex-1 p-4 rounded-2xl border-2 border-dashed border-accent/30 hover:border-accent/50 text-center transition-all hover:bg-accent/5 bg-accent/5"
               >
-                <FiUpload className="mx-auto text-accent/50 mb-2" size={24} />
-                <p className="text-sm font-medium text-dark/60">Antes / Depois</p>
-                <p className="text-xs text-dark/30 mt-1">Clique para enviar</p>
+                <FiCamera className="mx-auto text-accent mb-1.5" size={20} />
+                <p className="text-xs font-medium text-dark/60">Tirar Foto</p>
               </button>
             </div>
 
-            {/* Current attachments */}
-            {anamnese.anexos?.length > 0 && (
+            {/* Bancada photos */}
+            {anamnese.anexos?.filter(a => a.tipo === 'bancada').length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {anamnese.anexos.map(a => (
+                {anamnese.anexos.filter(a => a.tipo === 'bancada').map(a => (
                   <div key={a.id} className="relative rounded-xl overflow-hidden group">
-                    <img src={`${UPLOAD_URL}/${a.arquivo_path}`} alt={a.tipo} className="w-full h-28 object-cover" />
+                    <img src={`${UPLOAD_URL}/${a.arquivo_path}`} alt="Bancada" className="w-full h-28 object-cover" />
                     <button
                       onClick={() => handleDeleteAnexo(a.id)}
                       className="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -330,20 +355,69 @@ export default function VisualizarAnamnese() {
                       <FiTrash2 size={12} />
                     </button>
                     <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1">
-                      <span className="text-white text-xs">{a.tipo === 'bancada' ? 'Bancada' : 'Antes/Depois'}</span>
+                      <span className="text-white text-xs">Bancada</span>
                     </div>
                   </div>
                 ))}
               </div>
             )}
+          </div>
 
-            {uploading && (
-              <div className="flex items-center justify-center py-4">
-                <div className="w-5 h-5 border-2 border-accent/30 border-t-accent rounded-full animate-spin mr-2" />
-                <span className="text-sm text-dark/50">Enviando...</span>
+          {/* ─── ANTES / DEPOIS ─── */}
+          <div className="bg-white rounded-3xl p-5 shadow-card">
+            <h3 className="font-heading font-semibold text-dark mb-2 flex items-center gap-2">
+              <FiEye className="text-accent" size={18} />
+              Fotos Antes / Depois
+            </h3>
+            <p className="text-dark/40 text-xs mb-4">Registre o resultado visual do procedimento</p>
+
+            <div className="flex gap-3 mb-4">
+              <button
+                onClick={() => handleUploadFoto('antes_depois')}
+                disabled={uploading}
+                className="flex-1 p-4 rounded-2xl border-2 border-dashed border-secondary/50 hover:border-accent/50 text-center transition-all hover:bg-accent/5"
+              >
+                <FiUpload className="mx-auto text-accent/50 mb-1.5" size={20} />
+                <p className="text-xs font-medium text-dark/60">Enviar Foto</p>
+              </button>
+
+              <button
+                onClick={() => handleCaptureFoto('antes_depois')}
+                disabled={uploading}
+                className="flex-1 p-4 rounded-2xl border-2 border-dashed border-accent/30 hover:border-accent/50 text-center transition-all hover:bg-accent/5 bg-accent/5"
+              >
+                <FiCamera className="mx-auto text-accent mb-1.5" size={20} />
+                <p className="text-xs font-medium text-dark/60">Tirar Foto</p>
+              </button>
+            </div>
+
+            {/* Antes/Depois photos */}
+            {anamnese.anexos?.filter(a => a.tipo === 'antes_depois').length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {anamnese.anexos.filter(a => a.tipo === 'antes_depois').map(a => (
+                  <div key={a.id} className="relative rounded-xl overflow-hidden group">
+                    <img src={`${UPLOAD_URL}/${a.arquivo_path}`} alt="Antes/Depois" className="w-full h-28 object-cover" />
+                    <button
+                      onClick={() => handleDeleteAnexo(a.id)}
+                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <FiTrash2 size={12} />
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1">
+                      <span className="text-white text-xs">Antes/Depois</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
+
+          {uploading && (
+            <div className="flex items-center justify-center py-4">
+              <div className="w-5 h-5 border-2 border-accent/30 border-t-accent rounded-full animate-spin mr-2" />
+              <span className="text-sm text-dark/50">Enviando...</span>
+            </div>
+          )}
 
           {/* Final signature */}
           <div className="bg-white rounded-3xl p-5 shadow-card">

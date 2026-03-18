@@ -1,7 +1,12 @@
 from sqlalchemy import create_engine, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+import pytz
+from datetime import datetime
 from config import settings
+
+def get_brazil_time():
+    return datetime.now(pytz.timezone('America/Sao_Paulo'))
 
 connect_args = {}
 if settings.DATABASE_URL.startswith("sqlite"):

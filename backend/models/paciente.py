@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String, Date, Text, DateTime
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
-from database import Base
+from database import Base, get_brazil_time
 
 
 class Paciente(Base):
@@ -15,6 +14,6 @@ class Paciente(Base):
     historico_saude = Column(Text, nullable=True)
     endereco = Column(String, nullable=True)
     email = Column(String, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), default=get_brazil_time)
 
     anamneses = relationship("Anamnese", back_populates="paciente", order_by="desc(Anamnese.created_at)")

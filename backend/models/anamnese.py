@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
-from database import Base
+from database import Base, get_brazil_time
 
 
 class Anamnese(Base):
@@ -12,8 +11,8 @@ class Anamnese(Base):
     modelo_id = Column(Integer, ForeignKey("modelos_anamnese.id"), nullable=False)
     status = Column(String, nullable=False, default="em_andamento")  # em_andamento, finalizada
     observacoes = Column(Text, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), default=get_brazil_time)
+    updated_at = Column(DateTime(timezone=True), onupdate=get_brazil_time)
     finalizada_at = Column(DateTime(timezone=True), nullable=True)
 
     paciente = relationship("Paciente", back_populates="anamneses")
