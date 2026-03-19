@@ -52,6 +52,11 @@ class AnamneseFinalizarRequest(BaseModel):
     assinatura_final_base64: str  # Base64 encoded final signature
 
 
+class AnameseSalvarProgressoRequest(BaseModel):
+    observacoes: Optional[str] = None
+    assinatura_final_base64: Optional[str] = None  # Optional — save signature without finalizing
+
+
 class AnamneseListResponse(BaseModel):
     id: int
     paciente_id: int

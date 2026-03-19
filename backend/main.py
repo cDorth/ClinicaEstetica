@@ -134,3 +134,25 @@ def create_default_user():
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
+
+
+# ─── Serve frontend (production) ───────────────────────────────────
+# When deployed, the built frontend sits in ../frontend/dist
+# The backend serves it as static files with SPA fallback
+FRONTEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", "dist")
+
+if os.path.isdir(FRONTEND_DIR):
+    from fastapi.responses import FileResponse
+
+    # Serve static assets (js, css, images)
+    app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")), name="frontend_assets")
+
+    # SPA fallback — any non-API route returns index.html
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        # Check if the file exists in dist
+        file_path = os.path.join(FRONTEND_DIR, full_path)
+        if full_path and os.path.isfile(file_path):
+            return FileResponse(file_path)
+        # Return index.html for SPA routing
+        return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))

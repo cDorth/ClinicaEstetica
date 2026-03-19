@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:8000';
+// In production, frontend is served by the backend (same origin)
+// In development, backend runs on port 8000
+const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:8000';
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -52,6 +54,7 @@ export const getAnamneses = (params) => api.get('/api/anamneses', { params });
 export const getAnamnese = (id) => api.get(`/api/anamneses/${id}`);
 export const criarAnamnese = (data) => api.post('/api/anamneses', data);
 export const finalizarAnamnese = (id, data) => api.put(`/api/anamneses/${id}/finalizar`, data);
+export const salvarProgresso = (id, data) => api.put(`/api/anamneses/${id}/salvar-progresso`, data);
 export const uploadAnexo = (anamneseId, formData) => api.post(`/api/anamneses/${anamneseId}/anexos`, formData, {
   headers: { 'Content-Type': 'multipart/form-data' },
 });

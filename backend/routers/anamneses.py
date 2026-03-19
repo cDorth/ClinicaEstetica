@@ -9,8 +9,9 @@ from models.anexo import Anexo
 from models.paciente import Paciente
 from models.modelo_anamnese import ModeloAnamnese
 from schemas.anamnese import (
-    AnamneseCreate, AnamneseFinalizarRequest, AnamneseListResponse,
-    AnamneseDetailResponse, RespostaResponse, AssinaturaResponse, AnexoResponse,
+    AnamneseCreate, AnamneseFinalizarRequest, AnameseSalvarProgressoRequest,
+    AnamneseListResponse, AnamneseDetailResponse, RespostaResponse,
+    AssinaturaResponse, AnexoResponse,
 )
 from services.auth import get_current_user
 from services.upload import save_base64_image, save_uploaded_file
@@ -141,6 +142,47 @@ def finalizar_anamnese(
         imagem_path=sig_path,
     )
     db.add(assinatura)
+
+    db.commit()
+    db.refresh(anamnese)
+
+    return _build_detail_response(anamnese, db)
+
+
+@router.put("/{anamnese_id}/salvar-progresso", response_model=AnamneseDetailResponse)
+def salvar_progresso(
+    anamnese_id: int,
+    data: AnameseSalvarProgressoRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    anamnese = db.query(Anamnese).filter(Anamnese.id == anamnese_id).first()
+    if not anamnese:
+        raise HTTPException(status_code=404, detail="Anamnese não encontrada")
+    if anamnese.status == "finalizada":
+        raise HTTPException(status_code=400, detail="Anamnese já finalizada")
+
+    # Update observations
+    if data.observacoes is not None:
+        anamnese.observacoes = data.observacoes
+
+    # Save signature if provided (without finalizing)
+    if data.assinatura_final_base64:
+        # Remove existing final signature if any (update)
+        existing_final = db.query(Assinatura).filter(
+            Assinatura.anamnese_id == anamnese_id,
+            Assinatura.tipo == "final",
+        ).first()
+        if existing_final:
+            db.delete(existing_final)
+
+        sig_path = save_base64_image(data.assinatura_final_base64, "assinaturas", "sig_rascunho_")
+        assinatura = Assinatura(
+            anamnese_id=anamnese.id,
+            tipo="final",
+            imagem_path=sig_path,
+        )
+        db.add(assinatura)
 
     db.commit()
     db.refresh(anamnese)

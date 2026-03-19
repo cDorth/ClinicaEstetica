@@ -27,7 +27,7 @@ class Resposta(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     anamnese_id = Column(Integer, ForeignKey("anamneses.id", ondelete="CASCADE"), nullable=False)
-    campo_id = Column(Integer, ForeignKey("campos_modelo.id"), nullable=False)
+    campo_id = Column(Integer, ForeignKey("campos_modelo.id"), nullable=True)
     valor = Column(JSON, nullable=True)
 
     anamnese = relationship("Anamnese", back_populates="respostas")

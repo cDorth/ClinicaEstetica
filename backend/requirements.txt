@@ -10,3 +10,5 @@ aiofiles
 reportlab
 pillow
 pytz
+psycopg2-binary
+gunicorn

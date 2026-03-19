@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getAnamnese, finalizarAnamnese, uploadAnexo, deletarAnexo, downloadPdf, UPLOAD_URL } from '../services/api';
+import { getAnamnese, finalizarAnamnese, salvarProgresso, uploadAnexo, deletarAnexo, downloadPdf, UPLOAD_URL } from '../services/api';
 import SignatureCanvas from '../components/SignatureCanvas';
-import { FiArrowLeft, FiEye, FiDownload, FiTrash2, FiUpload, FiCheckCircle, FiImage, FiEdit3, FiX, FiCamera } from 'react-icons/fi';
+import { FiArrowLeft, FiEye, FiDownload, FiTrash2, FiUpload, FiCheckCircle, FiImage, FiEdit3, FiX, FiCamera, FiSave } from 'react-icons/fi';
 
 export default function VisualizarAnamnese() {
   const { id } = useParams();
@@ -26,6 +26,10 @@ export default function VisualizarAnamnese() {
     try {
       const res = await getAnamnese(id);
       setAnamnese(res.data);
+      // Pre-populate observations if they exist
+      if (res.data.observacoes) {
+        setObservacoes(res.data.observacoes);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -113,6 +117,26 @@ export default function VisualizarAnamnese() {
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.detail || 'Erro ao finalizar');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSalvarProgresso = async () => {
+    setSaving(true);
+    try {
+      const payload = {
+        observacoes: observacoes || null,
+      };
+      if (assinaturaFinal) {
+        payload.assinatura_final_base64 = assinaturaFinal;
+      }
+      await salvarProgresso(id, payload);
+      await loadAnamnese();
+      alert('Progresso salvo com sucesso!');
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.detail || 'Erro ao salvar progresso');
     } finally {
       setSaving(false);
     }
@@ -440,20 +464,36 @@ export default function VisualizarAnamnese() {
               <FiArrowLeft size={16} />
               Voltar
             </button>
-            <button
-              onClick={handleFinalizar}
-              disabled={!assinaturaFinal || saving}
-              className="px-8 py-3 rounded-2xl bg-gradient-to-r from-green-500 to-green-600 text-white font-heading font-semibold text-sm flex items-center gap-2 hover:shadow-lg hover:shadow-green-500/25 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {saving ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <FiCheckCircle size={16} />
-                  Finalizar Anamnese
-                </>
-              )}
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={handleSalvarProgresso}
+                disabled={saving}
+                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-accent to-accent-dark text-white font-heading font-semibold text-sm flex items-center gap-2 hover:shadow-lg hover:shadow-accent/25 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <FiSave size={16} />
+                    Salvar Progresso
+                  </>
+                )}
+              </button>
+              <button
+                onClick={handleFinalizar}
+                disabled={!assinaturaFinal || saving}
+                className="px-8 py-3 rounded-2xl bg-gradient-to-r from-green-500 to-green-600 text-white font-heading font-semibold text-sm flex items-center gap-2 hover:shadow-lg hover:shadow-green-500/25 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <FiCheckCircle size={16} />
+                    Finalizar Anamnese
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
